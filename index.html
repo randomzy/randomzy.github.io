@@ -1,1 +1,255 @@
-Zdrawej Zwetja
+<!DOCTYPE html>
+
+<head>
+	<meta charset="utf-8"/>
+	<title>Роботът</title>
+
+	<script src="webgl-fmi.js"></script>
+	<script src="shaders.js"></script>
+	
+	<script>
+		// става и кост - конструктор
+		Bone = function()
+		{	
+            var dist = 6;
+            var side_thickness = 0.5;
+            var width = 6;
+
+            this.dist = dist;
+            this.side_thickness = side_thickness;
+            this.width = width;
+
+            this.elem = [];
+            this.elem[0] = new Cylinder([0,0,-side_thickness], 2, side_thickness);
+            this.elem[1] = new Cylinder([0,0,width], 2, side_thickness);
+            this.elem[2] = new Cylinder([dist,0,-side_thickness], 2, side_thickness);
+            this.elem[3] = new Cylinder([dist,0,width], 2, side_thickness);
+
+            this.elem[4] = new Cuboid([dist/2,0,-side_thickness/2],[width,4,side_thickness]);
+            this.elem[5] = new Cuboid([dist/2,0, width + side_thickness/2],[width,4,side_thickness]);
+
+            this.elem[6] = new Cylinder([0,0,0], 2, width);
+            this.elem[7] = new Cylinder([dist,0,0], 2, width);
+
+            this.rot = [0,0,0];
+
+            for (var i = 0; i < 8; i++) {
+                if (i < 6) {
+                    this.elem[i].color = [0,0,1];
+                } 
+                else {
+                    this.elem[i].color = [0.5, 0.5, 0.5];
+                }
+            }
+		}
+
+		// става и кост - метод за рисуване
+		Bone.prototype.draw = function()
+		{	
+            pushMatrix();
+            translate([this.width/2,0,0]);
+            yRotate(-90);
+			if (this.rot)
+			{
+				if (this.rot[0]) zRotate(this.rot[0]);	// хоризонтален ъгъл
+				if (this.rot[1]) xRotate(this.rot[1]);	// вертикален ъгъл
+				if (this.rot[2]) zRotate(this.rot[2]);	// осев ъгъл
+            }
+            for (var i = 0; i < 8; i++) {
+                this.elem[i].draw();
+            }
+            popMatrix();
+            translate([0,0,this.dist]);
+		}
+
+		Bone2 = function()
+		{
+
+            var dist = 6;
+            var side_thickness = 0.5;
+            var width = 6;
+
+            this.dist = dist;
+            this.side_thickness = side_thickness;
+            this.width = width;
+
+			this.elem = [];
+            this.elem[0] = new Cylinder([0,0,-side_thickness], 2, side_thickness);
+            this.elem[1] = new Cylinder([0,0,width], 2, side_thickness);
+			this.elem[2] = new Cylinder([0,0,0], 2, width);
+
+
+			this.elem[3] = new Cuboid([dist/2,0,-side_thickness/2],[width,4,side_thickness]);
+            this.elem[4] = new Cuboid([dist/2,0, width + side_thickness/2],[width,4,side_thickness]);
+			this.elem[5] = new Cuboid([dist + side_thickness/2, 0, width/2],
+									  [side_thickness, 4, width + 2*side_thickness]);
+
+			this.elem[6] = new Cylinder([dist + side_thickness,0,width/2], 2, dist - 1);
+			this.elem[6].rot = [-90,-90,0];
+
+			this.elem[7] = new Cylinder([dist + side_thickness + dist - 1,0,width/2], 2, 1);
+			this.elem[7].rot = [-90,-90,0];
+			this.elem[7].color = [1,0,0];
+
+			this.rot = [0,0,0];
+			for (var i = 0; i < 7; i++) {
+				this.elem[i].color = [0.5,0.5,0.5];
+			}
+		}
+
+		Bone2.prototype.draw = function()
+		{
+			pushMatrix();
+            translate([this.width/2,0,0]);
+            yRotate(-90);
+			if (this.rot)
+			{
+				if (this.rot[0]) zRotate(this.rot[0]);	// хоризонтален ъгъл
+				if (this.rot[1]) xRotate(this.rot[1]);	// вертикален ъгъл
+				if (this.rot[2]) zRotate(this.rot[2]);	// осев ъгъл
+            }
+            for (var i = 0; i < 8; i++) {
+                this.elem[i].draw();
+            }
+            popMatrix();
+            translate([0,0,2*this.dist + this.side_thickness]);
+		}
+
+		Rod = function()
+		{
+			this.elem = [];
+			this.elem[0] = new Cylinder([0,0,0],1,3);
+			this.elem[0].color = [0,1,0];
+			this.elem[1] = new Cylinder([0,0,3],1,0.7);
+			this.elem[1].color = [1,0,0];
+			this.elem[2] = new Cylinder([0,0,3.7],1,0.7);
+			this.elem[2].color = [1,1,1];
+			this.elem[3] = new Cylinder([0,0,4.4],1,0.7);
+			this.elem[3].color = [1,1,0];
+			this.elem[4] = new Cylinder([0,0,5.1],1,1.5);
+			this.elem[4].color = [0,1,0];
+
+		}
+
+		Rod.prototype.draw = function()
+		{
+			for (var i = 0; i < 5; i++) {
+				this.elem[i].draw();
+			}
+			translate([0,0,6.7]);
+		}
+
+		function start( )
+		{
+			var	canvas = document.getElementById("picasso");
+			canvas.addEventListener('webglcontextlost',function(event){event.preventDefault();},false);
+			canvas.addEventListener('webglcontextrestored',function(){init();},false);
+
+			init();
+			drawFrame();
+		}
+		
+		function init()
+		{
+			gl = getContext("picasso");
+			glprog = getProgram(vShader,fShader);
+			getVariables();
+
+			gl.enable(gl.DEPTH_TEST);
+			gl.clearColor(0.7,0.7,0.7,1);
+
+			identity();
+			perspective(30,gl.canvas.width/gl.canvas.height,1,40000);
+			gl.uniform1i(uUseNormalMatrix,false);
+
+			gl.uniform3f(uAmbientColor,0.3,0.3,0.3);
+			gl.uniform3f(uDiffuseColor,1,1,1);
+			gl.uniform3f(uLightDir,0,0,-1);
+
+			// платформа
+            platform = new Cylinder([0,0,0],6,2);
+            platform.color = [0.5, 0.5, 0.5];
+			
+            // дефиниране на сегментите
+            base = new Cylinder([0,0,2],1,5);
+            base.color = [0.7, 0.7, 0.7];
+            
+            baseJoint = new Cuboid([0,0,0], [3,3,2]);
+			baseJoint.color = [0.8, 0.8, 0.6];
+
+            bone = new Bone();
+			bone2 = new  Bone2();
+
+			cross = new Cuboid([0,0,0], [3,1,3]);
+			cross.color =  [1,1,0];
+
+			rod = new Rod();
+		}
+
+		var frame = 0;
+		
+		var time = now();
+		var oldTime = time;
+		function now() { return (new Date()).getTime()/1000; }
+		
+		function drawFrame()
+		{
+			time = now();
+			var dTime = time-oldTime;
+			oldTime = time;
+			
+			frame++;
+			gl.clear(gl.COLOR_BUFFER_BIT+gl.DEPTH_BUFFER_BIT);
+			
+			lookAt([40,80,40],[0,0,20],[0,0,1]);
+
+			// рисуване на платформата
+			platform.draw();
+            base.draw();
+			pushMatrix();
+			//рисуване на базовата пръчка
+                translate([0,0,8]);
+                zRotate(360*Math.sin(time/4));
+                baseJoint.draw();
+				translate([0,0,2]);
+			//рисуване на първата основна част
+                xRotate(60*Math.sin(time/3));
+                bone.draw();
+                xRotate(50*Math.sin(time/2));
+                translate([0,0,2]);
+                baseJoint.draw();
+				translate([0,0,0]);
+			//рисуване на свързващата пръчка
+				rod.draw();
+				translate([0,0,1]);
+				zRotate(100*Math.sin(time));
+				xRotate(45*Math.sin(time));
+			//рисуване на втората освнона част
+				bone2.draw();
+				zRotate(500*time);
+				cross.draw();
+				pushMatrix();
+					zRotate(90);
+					cross.draw();
+				popMatrix();
+			popMatrix();
+			// rod.draw();
+
+			requestAnimationFrame(drawFrame);
+		}
+
+	</script>	
+</head>
+
+<body onload="start()">
+	<h2>Роботът</h2>
+
+	<noscript>
+		Искаме JavaScript, но няма!
+	</noscript>
+	
+	<canvas id="picasso" width="600" height="400" style="border: solid;">
+		Искаме canvas, но няма!
+	</canvas>
+	
+</body>
